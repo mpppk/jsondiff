@@ -1,7 +1,14 @@
 [package]
 name = "jsondiff"
+description = "A tool for outputs semantic difference of json"
+readme = "readme.md"
 version = "0.1.0"
+authors = ["niboshi(mpppk)"]
 edition = "2018"
+license = "MIT"
+repository = "https://github.com/mpppk/jsondiff"
+categories = ["command-line-utilities", "development-tools"]
+keywords = ["cli", "json"]
 
 [lib]
 name = "jsondiff"
