@@ -2,10 +2,8 @@ use anyhow::{Context, Result};
 use serde_json::Map;
 use serde_json::Value;
 use similar::{ChangeTag, DiffOp, TextDiff};
-use std::collections::hash_map::DefaultHasher;
 use std::collections::BTreeMap;
 use std::fs::File;
-use std::hash::{Hash, Hasher};
 use std::path::PathBuf;
 
 #[cfg(test)]
@@ -134,6 +132,25 @@ pub fn diff(v1: Value, v2: Value, unified: usize) -> String {
     ret_str
 }
 
+fn generate_key(v: &Value) -> String {
+    return match v {
+        Value::Null => "__null__".to_string(),
+        Value::Bool(bool_v) => {
+            if *bool_v {
+                "__true__".to_string()
+            } else {
+                "__false__".to_string()
+            }
+        }
+        Value::Number(num) => num.to_string(),
+        Value::String(s) => s.clone(),
+        Value::Array(arr) => arr
+            .iter()
+            .fold(String::new(), |s, av| s + &generate_key(av)),
+        Value::Object(obj) => obj.iter().fold(String::new(), |s, (k, _)| s + k),
+    };
+}
+
 pub fn normalize_value(v: Value, normalize_array: bool) -> Value {
     match v {
         Value::Array(av) => {
@@ -144,9 +161,7 @@ pub fn normalize_value(v: Value, normalize_array: bool) -> Value {
                 .into_iter()
                 .fold(BTreeMap::new(), |mut m, e| {
                     let normalized_v = normalize_value(e, normalize_array);
-                    let mut hasher = DefaultHasher::new();
-                    normalized_v.to_string().hash(&mut hasher);
-                    m.insert(hasher.finish(), normalized_v);
+                    m.insert(generate_key(&normalized_v), normalized_v);
                     m
                 })
                 .into_iter()
