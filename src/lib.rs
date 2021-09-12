@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use colored::*;
 use serde_json::Map;
 use serde_json::Value;
 use similar::{ChangeTag, DiffOp, TextDiff};
@@ -6,7 +7,6 @@ use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use colored::*;
 
 #[cfg(test)]
 mod tests {
