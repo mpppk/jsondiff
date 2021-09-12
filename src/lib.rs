@@ -135,6 +135,7 @@ pub fn open_file(file_path: PathBuf) -> Result<File> {
     File::open(file_path).context(format!("file not found: {}", file_path_str))
 }
 
+/// Calculate semantic difference of json values.
 pub fn diff(v1: Value, v2: Value, unified: usize, output_normalized_json: bool) -> Result<String> {
     let pretty_json1 = serde_json::to_string_pretty(&normalize_value(v1, true))?;
     let pretty_json2 = serde_json::to_string_pretty(&normalize_value(v2, true))?;
@@ -212,6 +213,11 @@ fn generate_array_key(v: &Value) -> String {
     };
 }
 
+/// Normalize json value
+///
+/// "normalize" means:
+/// 1. sort object key
+/// 2. sort array
 pub fn normalize_value(v: Value, normalize_array: bool) -> Value {
     match v {
         Value::Array(av) => {

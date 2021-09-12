@@ -4,14 +4,18 @@ use serde_json::Value;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-/// CLI for prints json diff
+/// A tool for outputs semantic difference of json
 #[derive(StructOpt, Debug)]
-#[structopt(name = "basic")]
+#[structopt(name = "jsondiff")]
 struct Opt {
+    /// Generate diffs with <n> lines of context
     #[structopt(short = "U", default_value = "3")]
     unified: usize,
-    #[structopt(name = "output-normalized-json", short = "n")]
+
+    /// Outputs normalized json as "normalized1.json" and "normalized2.json"
+    #[structopt(long = "output-normalized-json", short = "n")]
     output_normalized_json: bool,
+
     file_path1: PathBuf,
     file_path2: PathBuf,
 }
