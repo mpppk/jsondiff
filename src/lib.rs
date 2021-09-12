@@ -6,6 +6,7 @@ use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
+use colored::*;
 
 #[cfg(test)]
 mod tests {
@@ -174,15 +175,15 @@ pub fn diff(v1: Value, v2: Value, unified: usize, output_normalized_json: bool) 
             let mut equal_cnt = 0;
             for change in diff.iter_changes(diff_op) {
                 let prefix = match change.tag() {
-                    ChangeTag::Delete => format!("{}: - ", indices.0),
-                    ChangeTag::Insert => format!("{}: + ", indices.1),
+                    ChangeTag::Delete => format!("{}: - {}", indices.0, change).red(),
+                    ChangeTag::Insert => format!("{}: + {}", indices.1, change).green(),
                     ChangeTag::Equal => {
-                        let s = format!("{}:   ", indices.0 + equal_cnt);
+                        let s = format!("{}:   {}", indices.0 + equal_cnt, change);
                         equal_cnt += 1;
-                        s
+                        s.white()
                     }
                 };
-                ret_str = format!("{}{}{}", ret_str, prefix, change);
+                ret_str = format!("{}{}", ret_str, prefix);
             }
         }
         ret_str = format!("{}{}", ret_str, "----\n");
