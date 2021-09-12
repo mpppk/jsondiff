@@ -10,6 +10,8 @@ use structopt::StructOpt;
 struct Opt {
     #[structopt(short = "U", default_value = "3")]
     unified: usize,
+    #[structopt(name = "output-normalized-json", short = "n")]
+    output_normalized_json: bool,
     file_path1: PathBuf,
     file_path2: PathBuf,
 }
@@ -22,6 +24,6 @@ fn main() -> Result<()> {
 
     let v1: Value = serde_json::from_reader(file1)?;
     let v2: Value = serde_json::from_reader(file2)?;
-    println!("{}", diff(v1, v2, opt.unified));
+    println!("{}", diff(v1, v2, opt.unified, opt.output_normalized_json)?);
     Ok(())
 }

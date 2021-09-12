@@ -4,6 +4,7 @@ use serde_json::Value;
 use similar::{ChangeTag, DiffOp, TextDiff};
 use std::collections::BTreeMap;
 use std::fs::File;
+use std::io::Write;
 use std::path::PathBuf;
 
 #[cfg(test)]
@@ -23,7 +24,7 @@ mod tests {
 
         let v1: Value = serde_json::from_reader(file1)?;
         let v2: Value = serde_json::from_reader(file2)?;
-        assert_eq!(diff(v1, v2, 3), "");
+        assert_eq!(diff(v1, v2, 3, false).unwrap(), "");
         Ok(())
     }
 
@@ -35,7 +36,7 @@ mod tests {
 
         let v1: Value = serde_json::from_reader(file2)?;
         let v2: Value = serde_json::from_reader(file3)?;
-        assert_eq!(diff(v1, v2, 3), expected);
+        assert_eq!(diff(v1, v2, 3, false).unwrap(), expected);
         Ok(())
     }
 
@@ -48,7 +49,7 @@ mod tests {
 
         let v1: Value = serde_json::from_reader(file1)?;
         let v2: Value = serde_json::from_reader(file2)?;
-        assert_eq!(diff(v1, v2, 3), "");
+        assert_eq!(diff(v1, v2, 3, false).unwrap(), "");
         Ok(())
     }
 
@@ -60,7 +61,7 @@ mod tests {
 
         let v1: Value = serde_json::from_reader(file2)?;
         let v2: Value = serde_json::from_reader(file3)?;
-        assert_eq!(diff(v1, v2, 3), expected);
+        assert_eq!(diff(v1, v2, 3, false).unwrap(), expected);
         Ok(())
     }
 
@@ -73,7 +74,7 @@ mod tests {
 
         let v1: Value = serde_json::from_reader(file1)?;
         let v2: Value = serde_json::from_reader(file2)?;
-        assert_eq!(diff(v1, v2, 3), "");
+        assert_eq!(diff(v1, v2, 3, false).unwrap(), "");
         Ok(())
     }
 
@@ -85,7 +86,32 @@ mod tests {
 
         let v1: Value = serde_json::from_reader(file2)?;
         let v2: Value = serde_json::from_reader(file3)?;
-        assert_eq!(diff(v1, v2, 3), expected);
+        assert_eq!(diff(v1, v2, 3, false).unwrap(), expected);
+        Ok(())
+    }
+
+    #[test]
+    fn same_kv_obj_no_diff() -> Result<()> {
+        let file_path1 = PathBuf::from("./data/same_kv_obj/test1.json");
+        let file_path2 = PathBuf::from("./data/same_kv_obj/test2.json");
+        let file1 = open_file(file_path1)?;
+        let file2 = open_file(file_path2)?;
+
+        let v1: Value = serde_json::from_reader(file1)?;
+        let v2: Value = serde_json::from_reader(file2)?;
+        assert_eq!(diff(v1, v2, 3, false).unwrap(), "");
+        Ok(())
+    }
+
+    #[test]
+    fn same_kv_obj_has_diff() -> Result<()> {
+        let file2 = open_file(PathBuf::from("./data/same_kv_obj/test2.json"))?;
+        let file3 = open_file(PathBuf::from("./data/same_kv_obj/test3.json"))?;
+        let expected = fs::read_to_string("./data/same_kv_obj/expected2_3.diff")?;
+
+        let v1: Value = serde_json::from_reader(file2)?;
+        let v2: Value = serde_json::from_reader(file3)?;
+        assert_eq!(diff(v1, v2, 3, false).unwrap(), expected);
         Ok(())
     }
 }
@@ -108,11 +134,18 @@ pub fn open_file(file_path: PathBuf) -> Result<File> {
     File::open(file_path).context(format!("file not found: {}", file_path_str))
 }
 
-pub fn diff(v1: Value, v2: Value, unified: usize) -> String {
-    let pretty_json1 = serde_json::to_string_pretty(&normalize_value(v1, true)).unwrap();
-    let pretty_json2 = serde_json::to_string_pretty(&normalize_value(v2, true)).unwrap();
+pub fn diff(v1: Value, v2: Value, unified: usize, output_normalized_json: bool) -> Result<String> {
+    let pretty_json1 = serde_json::to_string_pretty(&normalize_value(v1, true))?;
+    let pretty_json2 = serde_json::to_string_pretty(&normalize_value(v2, true))?;
     let diff = TextDiff::from_lines(&pretty_json1, &pretty_json2);
     let mut ret_str = "".to_string();
+
+    if output_normalized_json {
+        let mut file1 = File::create("normalized1.json")?;
+        let mut file2 = File::create("normalized2.json")?;
+        write!(file1, "{}", pretty_json1).unwrap();
+        write!(file2, "{}", pretty_json2).unwrap();
+    }
 
     for diff_ops in diff.grouped_ops(unified) {
         for diff_op in diff_ops.iter() {
@@ -154,7 +187,7 @@ pub fn diff(v1: Value, v2: Value, unified: usize) -> String {
         }
         ret_str = format!("{}{}", ret_str, "----\n");
     }
-    ret_str
+    Ok(ret_str)
 }
 
 fn generate_array_key(v: &Value) -> String {
@@ -186,9 +219,11 @@ pub fn normalize_value(v: Value, normalize_array: bool) -> Value {
             }
             let new_v: Vec<Value> = av
                 .into_iter()
-                .fold(BTreeMap::new(), |mut m, e| {
+                .enumerate()
+                .fold(BTreeMap::new(), |mut m, (i, e)| {
                     let normalized_v = normalize_value(e, normalize_array);
-                    m.insert(generate_array_key(&normalized_v), normalized_v);
+                    let key = format!("{}_{}", generate_array_key(&normalized_v), i);
+                    m.insert(key, normalized_v);
                     m
                 })
                 .into_iter()
