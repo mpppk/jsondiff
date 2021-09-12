@@ -63,6 +63,31 @@ mod tests {
         assert_eq!(diff(v1, v2, 3), expected);
         Ok(())
     }
+
+    #[test]
+    fn same_key_obj_no_diff() -> Result<()> {
+        let file_path1 = PathBuf::from("./data/same_key_obj/test1.json");
+        let file_path2 = PathBuf::from("./data/same_key_obj/test2.json");
+        let file1 = open_file(file_path1)?;
+        let file2 = open_file(file_path2)?;
+
+        let v1: Value = serde_json::from_reader(file1)?;
+        let v2: Value = serde_json::from_reader(file2)?;
+        assert_eq!(diff(v1, v2, 3), "");
+        Ok(())
+    }
+
+    #[test]
+    fn same_key_obj_has_diff() -> Result<()> {
+        let file2 = open_file(PathBuf::from("./data/same_key_obj/test2.json"))?;
+        let file3 = open_file(PathBuf::from("./data/same_key_obj/test3.json"))?;
+        let expected = fs::read_to_string("./data/same_key_obj/expected2_3.diff")?;
+
+        let v1: Value = serde_json::from_reader(file2)?;
+        let v2: Value = serde_json::from_reader(file3)?;
+        assert_eq!(diff(v1, v2, 3), expected);
+        Ok(())
+    }
 }
 
 pub fn normalize_from_file_path(file_path: PathBuf) -> Value {
@@ -132,7 +157,7 @@ pub fn diff(v1: Value, v2: Value, unified: usize) -> String {
     ret_str
 }
 
-fn generate_key(v: &Value) -> String {
+fn generate_array_key(v: &Value) -> String {
     return match v {
         Value::Null => "__null__".to_string(),
         Value::Bool(bool_v) => {
@@ -146,8 +171,10 @@ fn generate_key(v: &Value) -> String {
         Value::String(s) => s.clone(),
         Value::Array(arr) => arr
             .iter()
-            .fold(String::new(), |s, av| s + &generate_key(av)),
-        Value::Object(obj) => obj.iter().fold(String::new(), |s, (k, _)| s + k),
+            .fold(String::new(), |s, av| s + &generate_array_key(av)),
+        Value::Object(obj) => obj
+            .iter()
+            .fold(String::new(), |s, (k, v)| format!("{}/{}:{}", s, k, v)),
     };
 }
 
@@ -161,7 +188,7 @@ pub fn normalize_value(v: Value, normalize_array: bool) -> Value {
                 .into_iter()
                 .fold(BTreeMap::new(), |mut m, e| {
                     let normalized_v = normalize_value(e, normalize_array);
-                    m.insert(generate_key(&normalized_v), normalized_v);
+                    m.insert(generate_array_key(&normalized_v), normalized_v);
                     m
                 })
                 .into_iter()
