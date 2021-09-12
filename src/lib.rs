@@ -33,7 +33,7 @@ mod tests {
     fn simple_has_diff() -> Result<()> {
         let file2 = open_file(PathBuf::from("./data/simple/test2.json"))?;
         let file3 = open_file(PathBuf::from("./data/simple/test3.json"))?;
-        let expected = fs::read_to_string("./data/simple/expected2_3.diff")?;
+        let expected = fs::read_to_string("./data/simple/expected2_3.diff")?.replace("\r", "");
 
         let v1: Value = serde_json::from_reader(file2)?;
         let v2: Value = serde_json::from_reader(file3)?;
@@ -58,7 +58,7 @@ mod tests {
     fn deep_has_diff() -> Result<()> {
         let file2 = open_file(PathBuf::from("./data/deep/test2.json"))?;
         let file3 = open_file(PathBuf::from("./data/deep/test3.json"))?;
-        let expected = fs::read_to_string("./data/deep/expected2_3.diff")?;
+        let expected = fs::read_to_string("./data/deep/expected2_3.diff")?.replace("\r", "");
 
         let v1: Value = serde_json::from_reader(file2)?;
         let v2: Value = serde_json::from_reader(file3)?;
@@ -83,7 +83,7 @@ mod tests {
     fn same_key_obj_has_diff() -> Result<()> {
         let file2 = open_file(PathBuf::from("./data/same_key_obj/test2.json"))?;
         let file3 = open_file(PathBuf::from("./data/same_key_obj/test3.json"))?;
-        let expected = fs::read_to_string("./data/same_key_obj/expected2_3.diff")?;
+        let expected = fs::read_to_string("./data/same_key_obj/expected2_3.diff")?.replace("\r", "");
 
         let v1: Value = serde_json::from_reader(file2)?;
         let v2: Value = serde_json::from_reader(file3)?;
@@ -108,7 +108,7 @@ mod tests {
     fn same_kv_obj_has_diff() -> Result<()> {
         let file2 = open_file(PathBuf::from("./data/same_kv_obj/test2.json"))?;
         let file3 = open_file(PathBuf::from("./data/same_kv_obj/test3.json"))?;
-        let expected = fs::read_to_string("./data/same_kv_obj/expected2_3.diff")?;
+        let expected = fs::read_to_string("./data/same_kv_obj/expected2_3.diff")?.replace("\r", "");
 
         let v1: Value = serde_json::from_reader(file2)?;
         let v2: Value = serde_json::from_reader(file3)?;
