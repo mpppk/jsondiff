@@ -1,7 +1,6 @@
-use anyhow::{Context, Result};
-use jsondiff::{diff, normalize_value};
+use anyhow::{Result};
+use jsondiff::{diff, normalize_value, open_file, normalize_from_file_path};
 use serde_json::Value;
-use std::fs::File;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -12,9 +11,10 @@ struct Opt {
     #[structopt(subcommand)]
     pub sub: Sub,
 }
+
 #[derive(StructOpt, Debug)]
 #[structopt()]
-pub enum Sub {
+enum Sub {
     /// Normalize json
     Normalize { file_path: PathBuf },
     /// Prints diff of json files
@@ -24,24 +24,6 @@ pub enum Sub {
         file_path1: PathBuf,
         file_path2: PathBuf,
     },
-}
-
-fn normalize_from_file_path(file_path: PathBuf) -> Value {
-    let file = File::open(file_path).unwrap();
-    normalize_from_reader(file)
-}
-
-fn normalize_from_reader(file: File) -> Value {
-    let v: Value = serde_json::from_reader(file).unwrap();
-    normalize_value(v, true)
-}
-
-fn open_file(file_path: PathBuf) -> Result<File> {
-    let file_path_str = file_path
-        .to_str()
-        .context("invalid path is given")?
-        .to_string();
-    File::open(file_path).context(format!("file not found: {}", file_path_str))
 }
 
 fn main() -> Result<()> {
