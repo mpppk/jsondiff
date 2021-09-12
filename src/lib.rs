@@ -245,6 +245,6 @@ pub fn normalize_value(v: Value, normalize_array: bool) -> Value {
             });
             Value::from(new_obj)
         }
-        _ => return v,
+        _ => v,
     }
 }
